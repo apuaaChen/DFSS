@@ -22,7 +22,7 @@ import math
 import torch
 import torch.utils.checkpoint
 from torch import nn
-import dfss
+import pydfss
 import nvtx
 
 from transformers.modeling_utils import PreTrainedModel
@@ -95,7 +95,6 @@ class BertSelfAttentionDFSS(nn.Module):
             value_layer = self.transpose_for_scores(self.value(hidden_states))
 
         query_layer = self.transpose_for_scores(mixed_query_layer)
-        value_layer = value_layer.contiguous()
 
         if self.is_decoder:
             # if cross_attention save Tuple(torch.Tensor, torch.Tensor) of all cross attention key/value_states.
@@ -110,10 +109,10 @@ class BertSelfAttentionDFSS(nn.Module):
         # Take the dot product between "query" and "key" to get the raw attention scores.
         with nvtx.annotate("QK^T"):
             if self.config.dsp:
-                attention_scores, metadata = dfss.sddmm(
+                attention_scores, metadata = pydfss.sddmm(
                     query_layer.contiguous().view(-1, query_layer.size(2), query_layer.size(3)), 
                     key_layer.contiguous().view(-1, key_layer.size(2), key_layer.size(3)), 
-                    attention_mask, training=self.training, bf16_sim=self.config.bf16_sim
+                    attention_mask, training=self.training
                     )
             else:
                 attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
@@ -148,7 +147,6 @@ class BertSelfAttentionDFSS(nn.Module):
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
-        # This dropout may affect the final accuracy.
         attention_probs = self.dropout(attention_probs)
 
         # Mask heads if we want to
@@ -158,7 +156,7 @@ class BertSelfAttentionDFSS(nn.Module):
         with nvtx.annotate("AV"):
             if self.config.dsp:
                 batch = value_layer.size(0)
-                context_layer = dfss.spmm(attention_probs, metadata, value_layer.view(-1, value_layer.size(2), value_layer.size(3)), training=self.training, bf16_sim=self.config.bf16_sim)
+                context_layer = pydfss.spmm(attention_probs, metadata, value_layer.contiguous().view(-1, value_layer.size(2), value_layer.size(3)), training=self.training)
                 context_layer = context_layer.view(batch, -1, context_layer.size(1), context_layer.size(2))
             else:
                 context_layer = torch.matmul(attention_probs, value_layer)

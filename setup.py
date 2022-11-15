@@ -11,7 +11,7 @@ setup(
     author='Zhaodong Chen',
     author_email='chenzd15thu@ucsb.edu',
     package_dir={'':"src"},
-    packages=['dfss'],
+    packages=['pydfss'],
     ext_modules=[
         CUDAExtension('dfss.meta', 
                       ['src/cuda/meta.cpp', 'src/cuda/meta_kernel.cu'],

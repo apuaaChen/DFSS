@@ -96,10 +96,7 @@ class ModelArguments:
         default=False,
         metadata={"help": "Using bf16 model during finetuning"},
     )
-    bf16_sim: bool = field(
-        default=False,
-        metadata={"help": "Simulate bf16 model with float"},
-    )
+
 
 @dataclass
 class DataTrainingArguments:
@@ -262,7 +259,7 @@ def main():
             )
 
     # Set seed before initializing model.
-    # set_seed(training_args.seed)
+    set_seed(training_args.seed)
 
     # Get the datasets: you can either provide your own CSV/JSON/TXT training and evaluation files (see below)
     # or just provide the name of one of the public datasets available on the hub at https://huggingface.co/datasets/
@@ -307,25 +304,24 @@ def main():
     )
 
     dfss_config = BertConfigDFSS(
-        config.vocab_size,
-        config.hidden_size,
-        config.num_hidden_layers,
-        config.num_attention_heads,
-        config.intermediate_size,
-        config.hidden_act,
-        config.hidden_dropout_prob,
-        config.attention_probs_dropout_prob,
-        config.max_position_embeddings,
-        config.type_vocab_size,
-        config.initializer_range,
-        config.layer_norm_eps,
-        config.pad_token_id,
-        config.position_embedding_type,
-        config.use_cache,
-        config.classifier_dropout,
+        vocab_size=config.vocab_size,
+        hidden_size=config.hidden_size,
+        num_hidden_layers=config.num_hidden_layers,
+        num_attention_heads=config.num_attention_heads,
+        intermediate_size=config.intermediate_size,
+        hidden_act=config.hidden_act,
+        hidden_dropout_prob=config.hidden_dropout_prob,
+        attention_probs_dropout_prob=config.attention_probs_dropout_prob,
+        max_position_embeddings=config.max_position_embeddings,
+        type_vocab_size=config.type_vocab_size,
+        initializer_range=config.initializer_range,
+        layer_norm_eps=config.layer_norm_eps,
+        pad_token_id=config.pad_token_id,
+        position_embedding_type=config.position_embedding_type,
+        use_cache=config.use_cache,
+        classifier_dropout=config.classifier_dropout,
         dsp=model_args.dsp,
         bf16=model_args.bf16,
-        bf16_sim=model_args.bf16_sim
     )
 
 
@@ -462,7 +458,7 @@ def main():
             raise ValueError("--do_train requires a train dataset")
         train_dataset = raw_datasets["train"]
         if data_args.max_train_samples is not None:
-            # We will select sample from whole data if agument is specified
+            # We will select sample from whole data if argument is specified
             train_dataset = train_dataset.select(range(data_args.max_train_samples))
         # Create train feature from dataset
         with training_args.main_process_first(desc="train dataset map pre-processing"):
@@ -665,17 +661,14 @@ def main():
         trainer.log_metrics("predict", metrics)
         trainer.save_metrics("predict", metrics)
 
-    if training_args.push_to_hub:
-        kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "question-answering"}
-        if data_args.dataset_name is not None:
-            kwargs["dataset_tags"] = data_args.dataset_name
-            if data_args.dataset_config_name is not None:
-                kwargs["dataset_args"] = data_args.dataset_config_name
-                kwargs["dataset"] = f"{data_args.dataset_name} {data_args.dataset_config_name}"
-            else:
-                kwargs["dataset"] = data_args.dataset_name
-
-        trainer.push_to_hub(**kwargs)
+    kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "question-answering"}
+    if data_args.dataset_name is not None:
+        kwargs["dataset_tags"] = data_args.dataset_name
+        if data_args.dataset_config_name is not None:
+            kwargs["dataset_args"] = data_args.dataset_config_name
+            kwargs["dataset"] = f"{data_args.dataset_name} {data_args.dataset_config_name}"
+        else:
+            kwargs["dataset"] = data_args.dataset_name
 
 
 def _mp_fn(index):

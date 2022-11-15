@@ -1,0 +1,6 @@
+build/*
+ckpt/*
+*.pyc
+*.egg
+*.txt
+src/dfss.egg-info/PKG-INFO
