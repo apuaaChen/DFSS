@@ -29,5 +29,5 @@ setup(
                       include_dirs=[WDIR+'/thirdparty/cutlass/include', WDIR+'/thirdparty/cutlass/tools/util/include', WDIR+'/thirdparty/cutlass/examples/common']),
         ],
     cmdclass={'build_ext': BuildExtension},
-    install_requires=['torch', 'nvtx', 'datasets', 'transformers==4.12.0']
+    install_requires=['torch']
 )
