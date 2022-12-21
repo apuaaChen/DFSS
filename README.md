@@ -2,6 +2,9 @@
 
 This repo contains the artifact for our PPoPP paper [Dynamic N:M Fine-grained Structured Sparse Attention Mechanism](https://arxiv.org/pdf/2203.00091.pdf). 
 
+## Requirements
+The accuracy evaluation script requires two A100 GPUs. The Speedup evaluation takes one A100 GPU. Other pre-Ampere GPUs are not supported as DFSS leverages the Ampere sparse tensor core. Other requirements are covered by the docker file.
+
 ## Get Source Code
 Get source code with
 ```shell
